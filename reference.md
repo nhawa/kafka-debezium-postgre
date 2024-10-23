@@ -1,0 +1,6 @@
+- https://medium.com/the-legend/kafka-connect-dan-debezium-4e9b44f3179
+- https://erfin-feluzy.medium.com/tutorial-streaming-cdc-mysql-ke-kafka-dengan-debezium-3a1ec9150cf8
+- https://www.confluent.io/hub/debezium/debezium-connector-postgresql
+- https://medium.com/yotpoengineering/scheduling-millions-of-messages-with-kafka-debezium-6d1a105160c
+- https://medium.com/trendyol-tech/debezium-with-simple-message-transformation-smt-4f5a80c85358
+- https://scullwm.medium.com/postgres-update-with-doctrine-issues-6c24ad14be
