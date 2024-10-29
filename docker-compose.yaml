@@ -1,4 +1,4 @@
-version: '3.9'
+# version: '3.9'
 
 services:
   zookeeper:
@@ -26,10 +26,10 @@ services:
   #     KAFKA_JMX_PORT: 9991
   #   ports:
   #     - 9092:9092
-  broker:
+  kafka:
     image: confluentinc/cp-kafka:7.3.1
-    hostname: broker
-    container_name: broker
+    hostname: kafka
+    container_name: kafka
     depends_on:
       zookeeper:
         condition: service_healthy
@@ -41,7 +41,7 @@ services:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -63,19 +63,24 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      broker:
+      kafka:
         condition: service_healthy
     ports:
       - '8083:8083'
     environment:
-      BOOTSTRAP_SERVERS: broker:29092
+      BOOTSTRAP_SERVERS: kafka:29092
       GROUP_ID: 1
       CONFIG_STORAGE_TOPIC: connect_configs
       STATUS_STORAGE_TOPIC: connect_statuses
       OFFSET_STORAGE_TOPIC: connect_offsets
+      # KEY_CONVERTER: io.confluent.connect.avro.AvroConverter
+      # VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       ENABLE_DEBEZIUM_SCRIPTING: 'true'
+      CONNECT_PRODUCER_MAX_REQUEST_SIZE: 3145728
+    volumes:
+      - $PWD/jars:/kafka/connect/debezium-connector-postgres
     healthcheck:
       test:
         [
@@ -92,52 +97,62 @@ services:
       timeout: 5s
       retries: 5
 
-  schema-registry:
-    image: confluentinc/cp-schema-registry:7.3.1
-    hostname: schema-registry
-    container_name: schema-registry
-    depends_on:
-      broker:
-        condition: service_healthy
-    ports:
-      - '8081:8081'
-    environment:
-      SCHEMA_REGISTRY_HOST_NAME: schema-registry
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker:29092
-      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+  # schema-registry:
+  #   image: confluentinc/cp-schema-registry:7.3.1
+  #   hostname: schema-registry
+  #   container_name: schema-registry
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+  #   ports:
+  #     - '8081:8081'
+  #   environment:
+  #     SCHEMA_REGISTRY_HOST_NAME: schema-registry
+  #     # SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+  #     SCHEMA_REGISTRY_LISTENERS: http://schema-registry:8081,http://localhost:8081
+  #     SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+  #   healthcheck:
+  #     start_period: 10s
+  #     interval: 10s
+  #     retries: 20
+  #     test: curl --user superUser:superUser --fail --silent --insecure http://localhost:8081/subjects --output /dev/null || exit 1
 
-    healthcheck:
-      start_period: 10s
-      interval: 10s
-      retries: 20
-      test: curl --user superUser:superUser --fail --silent --insecure http://localhost:8081/subjects --output /dev/null || exit 1
+  # rest-proxy:
+  #   image: confluentinc/cp-kafka-rest:7.3.1
+  #   depends_on:
+  #     kafka:
+  #       condition: service_healthy
+  #   ports:
+  #     - '8082:8082'
+  #   hostname: rest-proxy
+  #   container_name: rest-proxy
+  #   environment:
+  #     KAFKA_REST_HOST_NAME: rest-proxy
+  #     KAFKA_REST_BOOTSTRAP_SERVERS: 'kafka:29092'
+  #     KAFKA_REST_LISTENERS: 'http://0.0.0.0:8082'
 
-  rest-proxy:
-    image: confluentinc/cp-kafka-rest:7.3.1
-    depends_on:
-      broker:
-        condition: service_healthy
-    ports:
-      - '8082:8082'
-    hostname: rest-proxy
-    container_name: rest-proxy
-    environment:
-      KAFKA_REST_HOST_NAME: rest-proxy
-      KAFKA_REST_BOOTSTRAP_SERVERS: 'broker:29092'
-      KAFKA_REST_LISTENERS: 'http://0.0.0.0:8082'
+  # debezium-ui:
+  #   image: debezium/debezium-ui:latest
+  #   restart: always
+  #   container_name: debezium-ui
+  #   hostname: debezium-ui
+  #   depends_on:
+  #     debezium:
+  #       condition: service_healthy
+  #   ports:
+  #     - '8080:8080'
+  #   environment:
+  #     KAFKA_CONNECT_URIS: http://debezium:8083
 
-  debezium-ui:
-    image: debezium/debezium-ui:latest
-    restart: always
-    container_name: debezium-ui
-    hostname: debezium-ui
-    depends_on:
-      debezium:
-        condition: service_healthy
-    ports:
-      - '8080:8080'
-    environment:
-      KAFKA_CONNECT_URIS: http://debezium:8083
+  # kafka-ui:
+  #   container_name: kafka-ui
+  #   image: provectuslabs/kafka-ui:latest
+  #   ports:
+  #     - 9001:8080  # Kafka UI will be accessible on port 9001
+  #   environment:
+  #     KAFKA_CLUSTERS_0_NAME: local-cluster
+  #     KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+  #     DYNAMIC_CONFIG_ENABLED: 'true'
 
   postgres:
     image: debezium/postgres:16
@@ -158,3 +173,7 @@ services:
       retries: 5
     volumes:
       - ./scripts:/docker-entrypoint-initdb.d
+
+
+#docker run --tty --network postgres_debezium_cdc_default confluentinc/cp-kafkacat kafkacat -b kafka:29092 -C -s key=s -s value=avro -r http://schema-registry:8081 -t inbox.execution
+#docker run --tty --network postgres_debezium_cdc_default confluentinc/cp-kafkacat kafkacat -b kafka:29092 -t inbox.execution
