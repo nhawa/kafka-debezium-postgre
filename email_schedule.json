@@ -11,7 +11,7 @@
       "database.server.name": "postgres",
       "database.whitelist": "inbox",
       "database.history.kafka.bootstrap.servers": "kafka:9093",
-      "database.history.kafka.topic": "delayed.exampledb.history",
+      "database.history.kafka.topic": "delayed.inbox.history",
       "key.converter": "org.apache.kafka.connect.json.JsonConverter",
       "value.converter": "org.apache.kafka.connect.json.JsonConverter",
       "key.converter.schemas.enable": "false",
@@ -27,7 +27,7 @@
       "transforms.filter.type": "io.debezium.transforms.Filter",
       "transforms.filter.language": "jsr223.groovy",
       "transforms.filter.topic.regex": "inbox.execution",
-      "transforms.filter.condition": "(value.op == \"u\" && value.before.is_ready == false && value.after.is_ready == true)",
+      "transforms.filter.condition": "(value.op == \"u\" && value.before.is_ready == false && value.after.is_ready == true) || (value.op == \"c\" && value.after.is_ready == true)",
       
       "topic.creation.default.cleanup.policy": "delete",
       "topic.creation.default.partitions": "1",

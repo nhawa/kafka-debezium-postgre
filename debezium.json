@@ -5,10 +5,11 @@
     "plugin.name": "pgoutput",
     "database.hostname": "postgres",
     "database.port": "5432",
-    "database.user": "docker",
-    "database.password": "docker",
-    "database.dbname": "exampledb",
+    "database.user": "postgres",
+    "database.password": "postgres",
+    "database.dbname": "inbox",
     "database.server.name": "postgres",
-    "table.include.list": "public.inbox"
+    "table.include.list": "public.inbox",
+    "topic.prefix": "postgres"
   }
 }

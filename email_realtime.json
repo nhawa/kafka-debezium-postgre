@@ -1,0 +1,27 @@
+{
+    "name": "realtime-email-message",
+    "config": {
+      "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+      "database.hostname": "postgres",
+      "database.port": "5432",
+      "database.user": "postgres",
+      "database.password": "postgres",
+      "database.dbname": "inbox",
+      "database.server.name": "postgres",
+      "database.whitelist": "inbox",
+      "database.history.kafka.bootstrap.servers": "kafka:9093",
+      "database.history.kafka.topic": "delayed.inbox.history",
+      "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+      "key.converter.schemas.enable": "false",
+      "value.converter.schemas.enable": "false",
+      "table.whitelist": "inbox.inbox",
+      
+      "topic.creation.default.cleanup.policy": "delete",
+      "topic.creation.default.partitions": "1",
+      "topic.creation.default.replication.factor": "1",
+      "topic.creation.default.retention.ms": "604800000",
+      "topic.creation.enable": "true",
+      "topic.prefix": "postgres"
+    }
+  }

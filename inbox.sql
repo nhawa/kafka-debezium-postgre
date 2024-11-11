@@ -6,5 +6,5 @@ CREATE TABLE inbox (
 	is_ready bool NOT null default false,
 	CONSTRAINT inbox_pkey PRIMARY KEY (id)
 );
-
+alter table inbox replica identity full;
 select * from inbox;
